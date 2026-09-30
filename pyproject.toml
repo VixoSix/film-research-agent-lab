@@ -8,7 +8,9 @@ version = "0.1.0"
 description = "A learning project for deep film research using AI agents, source retrieval, RAG and evidence-based synthesis."
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "google-adk==2.10.0",
+]
 
 [project.optional-dependencies]
 dev = [
@@ -23,5 +25,6 @@ pythonpath = ["."]
 [tool.ruff]
 line-length = 100
 
-[tool.setuptools]
-packages = ["app"]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
