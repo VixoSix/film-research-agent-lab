@@ -11,6 +11,7 @@ requires-python = ">=3.11"
 dependencies = [
     "google-adk==2.10.0",
     "litellm==1.101.2",
+    "tavily-python==0.8.4",
 ]
 
 [project.optional-dependencies]
