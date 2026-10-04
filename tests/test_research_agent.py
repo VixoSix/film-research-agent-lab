@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import json
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -80,15 +81,24 @@ def test_search_tool_delegates_to_public_source_retrieval(monkeypatch):
 
     calls = []
 
-    def fake_search(query):
-        calls.append(query)
+    def fake_search(query, **kwargs):
+        calls.append((query, kwargs))
         return retrieval_result()
 
     monkeypatch.setattr("app.source_retrieval.search_web", fake_search)
 
     search_web("  focused query  ", FakeToolContext())
 
-    assert calls == ["  focused query  "]
+    assert calls == [("  focused query  ", {"max_results": 3})]
+
+
+def test_model_facing_search_tool_schema_exposes_only_query():
+    from app.research_agent.tools import search_web
+
+    parameters = inspect.signature(search_web).parameters
+
+    assert set(parameters) == {"query", "tool_context"}
+    assert "max_results" not in parameters
 
 
 def test_search_tool_serializes_normalized_retrieval_data(monkeypatch):
@@ -101,7 +111,9 @@ def test_search_tool_serializes_normalized_retrieval_data(monkeypatch):
     )
     monkeypatch.setattr(
         "app.source_retrieval.search_web",
-        lambda query: retrieval_result(candidates=[candidate()], warnings=[warning]),
+        lambda query, **kwargs: retrieval_result(
+            candidates=[candidate()], warnings=[warning]
+        ),
     )
 
     result = search_web("query", FakeToolContext())
@@ -122,7 +134,7 @@ def test_search_tool_represents_empty_result_without_fabrication(monkeypatch):
     from app.research_agent.tools import search_web
 
     monkeypatch.setattr(
-        "app.source_retrieval.search_web", lambda query: retrieval_result()
+        "app.source_retrieval.search_web", lambda query, **kwargs: retrieval_result()
     )
 
     result = search_web("query", FakeToolContext())
@@ -145,7 +157,10 @@ def test_search_tool_represents_empty_result_without_fabrication(monkeypatch):
 def test_search_tool_maps_project_errors_to_safe_outcomes(monkeypatch, error, status):
     from app.research_agent.tools import search_web
 
-    monkeypatch.setattr("app.source_retrieval.search_web", lambda query: (_ for _ in ()).throw(error))
+    monkeypatch.setattr(
+        "app.source_retrieval.search_web",
+        lambda query, **kwargs: (_ for _ in ()).throw(error),
+    )
 
     result = search_web("query", FakeToolContext())
 
@@ -161,7 +176,7 @@ def test_search_budget_allows_two_calls_and_blocks_third(monkeypatch):
 
     calls = []
 
-    def fake_search(query):
+    def fake_search(query, **kwargs):
         calls.append(query)
         return retrieval_result()
 
@@ -194,7 +209,7 @@ def test_failed_or_empty_search_consumes_budget(monkeypatch, retrieval):
 
     calls = []
 
-    def fake_search(query):
+    def fake_search(query, **kwargs):
         calls.append(query)
         return retrieval()
 
@@ -228,7 +243,7 @@ def test_concurrent_searches_reserve_at_most_two_slots(monkeypatch):
     source_calls = []
     source_calls_lock = threading.Lock()
 
-    def fake_search(query):
+    def fake_search(query, **kwargs):
         with source_calls_lock:
             source_calls.append(query)
         return retrieval_result(candidates=[candidate()])
@@ -318,3 +333,41 @@ def test_root_agent_instruction_has_output_contract():
         "verification needs",
     ):
         assert section in instruction
+
+
+def test_root_agent_instruction_hardens_live_grounding_boundaries():
+    from app.research_agent.agent import root_agent
+
+    instruction = " ".join(root_agent.instruction.lower().split())
+
+    for phrase in (
+        "derive search-budget reporting exclusively from tool-returned calls_used",
+        "tool-returned remaining_budget",
+        "tool-returned status",
+        "never calculate, infer, or guess budget state",
+        "only status=search_budget_exhausted or remaining_budget=0",
+        "if remaining_budget=1, do not describe the budget as exhausted",
+        "do not use qualitative source-quality labels",
+        "reputable",
+        "credible",
+        "reliable",
+        "authoritative",
+        "low-authority",
+        "weak source",
+        "strong source",
+        "trustworthy",
+        "questionable source",
+        "provider-returned snippet/content",
+        "snippet-level or discovery-level",
+        "do not call it verified",
+        "do not say a quote is confirmed or directly verified",
+        "do not infer roles, identities, dates, relationships, importance, or context",
+        "do not state that the page was inspected",
+        "specific follow-up source",
+        "returned by search_web in the current invocation",
+        "explicitly supplied by the user/planner",
+        "describe the verification need generically",
+        "do not use model memory to name a likely source",
+        "model memory cannot introduce specific source names, dates, authors, urls, or publications",
+    ):
+        assert phrase in instruction

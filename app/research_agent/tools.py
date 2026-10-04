@@ -17,6 +17,7 @@ from app.source_retrieval import (
 )
 
 SEARCH_BUDGET = 2
+SEARCH_MAX_RESULTS = 3
 SEARCH_CALLS_STATE_KEY = "temp:research_agent_search_calls"
 _SEARCH_BUDGET_LOCK = threading.Lock()
 
@@ -38,7 +39,10 @@ def search_web(query: str, tool_context: ToolContext) -> dict[str, Any]:
         )
 
     try:
-        retrieved = source_retrieval.search_web(query)
+        retrieved = source_retrieval.search_web(
+            query,
+            max_results=SEARCH_MAX_RESULTS,
+        )
     except InvalidRetrievalInputError:
         return _error_outcome("invalid_input", query, calls_used)
     except MissingCredentialsError:
