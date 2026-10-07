@@ -11,8 +11,14 @@ not the application's film-research agents.
    work/blockers; consult history only when needed.
 3. Check task status/dependencies, required outputs in this checkout, Python/dev
    tools and `git status --short --branch`. Preserve existing user changes.
-4. Run `python scripts/verify.py` as the pre-edit baseline. If prerequisites or the baseline
-   prevent execution within scope, record/report BLOCKED before changing code.
+4. If the assigned packet is `PENDING`, verify mechanically that every listed
+   dependency is `DONE`, its required outputs are present in this checkout, and
+   the branch was created from the updated integrated `develop`. If all checks
+   pass and the packet contract is complete, update only its status to `READY`
+   and then `IN_PROGRESS`; otherwise record/report `BLOCKED` before editing.
+5. Run `python scripts/verify.py` as the pre-edit baseline. If prerequisites or
+   the baseline prevent execution within scope, record/report BLOCKED before
+   changing code.
 
 ## Git safety
 

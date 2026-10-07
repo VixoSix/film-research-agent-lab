@@ -11,7 +11,7 @@ agents. The harness does not orchestrate application agents or choose providers.
 | Role | Responsibility | Boundary |
 | --- | --- | --- |
 | Planner (capable model, high reasoning) | Study the repository broadly; settle requirements/architecture; define design, task dependencies, file boundaries, acceptance, tests and execution prompts. | Record decisions before handing off; do not rely on conversation as the contract. |
-| Executor (faster model, medium reasoning) | Read one READY packet; follow its design; implement/test; run verification; record evidence and report. | Do not change requirements/architecture, select providers, expand scope, edit specs or implement another packet. |
+| Executor (faster model, medium reasoning) | Read one READY packet; or mechanically promote an assigned PENDING packet whose integrated dependencies are verified; follow its design; implement/test; run verification; record evidence and report. | Do not change requirements/architecture, select providers, expand scope, edit specs or implement another packet. |
 
 Architectural changes require a separate planning pass that documents the
 problem, affected contracts, requirements, design, migration boundaries and
@@ -49,23 +49,31 @@ exit/output. The short **Executor prompt** points to the packet and AGENTS.
 
 | Status | Meaning |
 | --- | --- |
-| PENDING | Draft/not executable yet: contract or prerequisites are incomplete. |
+| PENDING | The contract may be complete, but one or more prerequisites are not yet integrated; it is not claimable until the Executor verifies them. |
 | READY | Planner has completed the contract; all dependencies are DONE and their required outputs are available in the intended base. |
 | IN_PROGRESS | Executor has claimed the READY task on its assigned branch; baseline/implementation/verification is underway. |
 | BLOCKED | A concrete contract, dependency, environment or verification obstacle prevents correct execution within scope. Evidence and the required next decision/action are recorded. |
 | DONE | Every acceptance criterion and required verification passed on this task branch, with evidence recorded. Commit, review and integration are separate user-controlled actions. |
 
-Normal transitions: PENDING → READY → IN_PROGRESS → DONE. READY or IN_PROGRESS
-can become BLOCKED. After resolution, the Planner/user returns a blocked task
-to READY; an Executor rechecks prerequisites and baseline before resuming saved
-work. Do not reset progress or reimplement already verified work on resumption.
-An interrupted but unblocked task remains IN_PROGRESS with a next step recorded.
+Normal transitions: PENDING → READY → IN_PROGRESS → DONE. For an assigned
+`PENDING` packet, the Executor may perform the mechanical promotion
+`PENDING → READY → IN_PROGRESS` when every listed dependency is `DONE`, its
+required outputs are present in the checkout, the branch is based on the
+updated integrated `develop`, and the packet contract is complete. The Executor
+may change only the packet's operational status for this promotion; it must not
+change requirements, design, dependencies, scope or acceptance criteria. READY
+or IN_PROGRESS can become BLOCKED. If any prerequisite is missing, report
+BLOCKED. After a blocker is resolved, the Executor rechecks prerequisites and
+baseline before resuming saved work. Do not reset progress or reimplement
+already verified work on resumption. An interrupted but unblocked task remains
+IN_PROGRESS with a next step recorded.
 
 Dependencies list packet IDs/paths **and the specific outputs needed**; use
 `None` for independent tasks. The Planner owns ordering and prevents cycles.
 Before implementation the Executor confirms each dependency is DONE and its
 output is present in the current checkout. DONE on another branch alone is
-insufficient. If a prerequisite is missing, report BLOCKED; never merge,
+insufficient: the required code must exist in the integrated `develop` used as
+the branch base. If a prerequisite is missing, report BLOCKED; never merge,
 cherry-pick or implement that prerequisite as part of the assigned task.
 
 ## Git and task execution
@@ -79,7 +87,8 @@ checkout is wrong or detached, report the mismatch before editing.
 1. Read the assigned contract using the context policy below. Check progress,
    dependencies and local tool setup; inspect branch, HEAD and user changes.
    Record branch/HEAD and baseline evidence in the packet's execution record.
-2. Set the packet IN_PROGRESS and point `progress/current.md` to it. Run
+2. For an assigned PENDING packet, perform and record the promotion checks above;
+   then set the packet IN_PROGRESS and point `progress/current.md` to it. Run
    `python scripts/verify.py` before implementation; unresolved baseline failure blocks work.
 3. Implement only the packet. For changed logic use focused deterministic tests
    with fakes for external providers; reuse existing dependencies and patterns.
