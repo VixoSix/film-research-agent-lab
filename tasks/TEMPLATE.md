@@ -7,10 +7,17 @@
 - **Dependencies:** None / <packet path and ID, exact required outputs>
 - **Requirement IDs:** <spec path>: <REQ IDs> / None — <small-change reason>
 
-Replace every placeholder before READY. See
+Replace every placeholder before READY. A packet may begin as PENDING when its
+contract is complete but dependencies are not integrated. Once assigned, its
+Executor may promote it mechanically to READY and then IN_PROGRESS only after
+verifying every dependency is DONE, integrated in the `develop` branch used as
+the base, and its required outputs are present in the checkout. See
 [packet usage and states](../docs/development/workflow.md#specs-and-task-packets).
-The Planner owns this contract; the Executor updates status, acceptance checkboxes
-and the execution record only. This template is not an executable backlog item.
+The Planner owns the contract, order and dependencies. The Executor may update
+operational status, acceptance checkboxes and execution record only; promotion
+does not authorize changes to requirements, design, dependencies, scope or
+acceptance criteria. If a prerequisite is absent, report BLOCKED. This template
+is not an executable backlog item.
 
 ## Goal
 

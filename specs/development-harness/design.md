@@ -86,8 +86,8 @@ review; pytest/Ruff do not establish prose consistency or LLM research quality.
 
 ## Task 000 process decisions
 
-The user's explicit scope takes priority over generic skill workflows: author
-this spec and implement inline without approval pauses, a new branch/worktree
-or commits. This spec's `tasks.md` is the plan, and `progress/` is the memory;
-additional Superpowers plan/ledger files would duplicate the requested harness.
-Future Executors can use this repository without installing Superpowers.
+The user's explicit scope takes priority over generic workflow suggestions:
+author this spec and implement inline without approval pauses, a new
+branch/worktree or commits. This spec's `tasks.md` is the plan, and `progress/`
+is the memory. Future Executors can use this repository with the versioned
+harness documents and project dependencies alone.

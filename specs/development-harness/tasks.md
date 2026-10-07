@@ -1,7 +1,7 @@
 # Development Harness — Implementation Plan
 
-> For this Task 000 implementation, use `superpowers:executing-plans` inline.
-> The user's current-branch/no-commit instructions override generic skill steps.
+> For this Task 000 implementation, execute the steps directly on the assigned
+> current branch. The user's current-branch/no-commit instructions govern the work.
 
 **Goal:** Deliver the development harness without changing research behavior.
 **Architecture:** Versioned Markdown contracts and memory, plus one Makefile.
